@@ -80,7 +80,7 @@ setup(
         "flask-compress",
         "flask-talisman",
         "flask-migrate",
-        "flask-wtf",
+        "flask-wtf>= 0.14.2, <0.15.0",
         "geopy",
         "graphlib-backport",
         "gunicorn>=20.0.2, <20.1",
@@ -111,6 +111,8 @@ setup(
         "tabulate==0.8.9",
         "typing-extensions>=3.7.4.3,<4",  # needed to support typing.Literal on py37
         "wtforms-json",
+        "werkzeug==0.16.1",
+        "markupsafe==2.0.1",
     ],
     extras_require={
         "athena": ["pyathena>=1.10.8,<1.11"],
