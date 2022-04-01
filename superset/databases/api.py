@@ -445,7 +445,12 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
             500:
               $ref: '#/components/responses/500'
         """
+        # query superset.db to find database is this a database obj?
         database = self.datamodel.get(pk, self._base_filters)
+        print('*' * 20, 'databases/api.py->DatabaseRestApi->schemas()')
+        print('database: ', database)
+        print('type(database): ', type(database))
+        print('dir(database): ', database.__dict__)
         if not database:
             return self.response_404()
         try:
@@ -454,6 +459,7 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
                 cache_timeout=database.schema_cache_timeout,
                 force=kwargs["rison"].get("force", False),
             )
+            print('schemas: ', schemas)
             schemas = security_manager.get_schemas_accessible_by_user(database, schemas)
             return self.response(200, result=schemas)
         except OperationalError:

@@ -244,9 +244,15 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         # This validates custom Schema with custom validations
         except ValidationError as error:
             return self.response_400(message=error.messages)
-
+        print('*'*20, 'datasets/api.py->DatasetRestApi->post()')
+        print('item: ', item)
+        # print('item: ', item.__dict__)
+        print('g.user: ', g.user)
         try:
             new_model = CreateDatasetCommand(g.user, item).run()
+            
+            print('new_model: ', new_model)
+            print('new_model: ', new_model.__dict__)
             return self.response(201, id=new_model.id, result=item)
         except DatasetInvalidError as ex:
             return self.response_422(message=ex.normalized_messages())

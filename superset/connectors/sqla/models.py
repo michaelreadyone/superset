@@ -1500,15 +1500,21 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :param commit: should the changes be committed or not.
         :return: Tuple with lists of added, removed and modified column names.
         """
+        # this is the place I need modify for flatfile
+        print("*"*20, 'connectors/sqla/models.py->SqlaTable->fetch_metadata()')
         new_columns = self.external_metadata()
         metrics = []
         any_date_col = None
         db_engine_spec = self.db_engine_spec
         old_columns = db.session.query(TableColumn).filter(TableColumn.table == self)
+        print('old_columns: ', old_columns)
+        for col in old_columns:
+            print('col: ', col)
 
         old_columns_by_name: Dict[str, TableColumn] = {
             col.column_name: col for col in old_columns
         }
+        print('old_columns_by_name: ', old_columns_by_name)
         results = MetadataResult(
             removed=[
                 col
@@ -1516,7 +1522,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
                 if col not in {col["name"] for col in new_columns}
             ]
         )
-
+        print('results after MetadataResult: ', results)
         # clear old columns before adding modified columns back
         self.columns = []
         for col in new_columns:
@@ -1539,9 +1545,11 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
             self.columns.append(new_column)
             if not any_date_col and new_column.is_temporal:
                 any_date_col = col["name"]
+        print('results after for col in new_columns: ', results)
         self.columns.extend(
             [col for col in old_columns_by_name.values() if col.expression]
         )
+        print('self.columns: ', self.columns)
         metrics.append(
             SqlMetric(
                 metric_name="count",
@@ -1550,6 +1558,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
                 expression="COUNT(*)",
             )
         )
+        print('metrics: ', metrics[0].__dict__)
         if not self.main_dttm_col:
             self.main_dttm_col = any_date_col
         self.add_missing_metrics(metrics)
@@ -1558,6 +1567,8 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         config["SQLA_TABLE_MUTATOR"](self)
 
         db.session.merge(self)
+        print('db.session: ', db.session.__dict__)
+        print('db.session.session_factory.query_cls: ', db.session.session_factory.query_cls.__dict__)
         if commit:
             db.session.commit()
         return results

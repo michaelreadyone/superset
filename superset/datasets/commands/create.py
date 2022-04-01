@@ -48,8 +48,14 @@ class CreateDatasetCommand(BaseCommand):
         try:
             # Creates SqlaTable (Dataset)
             dataset = DatasetDAO.create(self._properties, commit=False)
+            print('*'*20, 'datasets/commands/create.py->CreateDatasetCommand->run()')
+            print('dataset: ', dataset)
+            print('dataset: ', dataset.__dict__)
             # Updates columns and metrics from the dataset
             dataset.fetch_metadata(commit=False)
+            print('after fectch')
+            print('dataset: ', dataset)
+            print('dataset: ', dataset.__dict__)
             # Add datasource access permission
             security_manager.add_permission_view_menu(
                 "datasource_access", dataset.get_perm()

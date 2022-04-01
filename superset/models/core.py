@@ -343,6 +343,7 @@ class Database(
 
         masked_url = self.get_password_masked_url(sqlalchemy_url)
         logger.debug("Database.get_sqla_engine(). Masked URL: %s", str(masked_url))
+        # logger.debug('use log system try')
 
         params = extra.get("engine_params", {})
         if nullpool:
@@ -590,6 +591,8 @@ class Database(
         :param force: whether to force refresh the cache
         :return: schema list
         """
+        logger.debug('|** added by mike **|')
+        print(self.db_engine_spec.get_schema_names(self.inspector))
         return self.db_engine_spec.get_schema_names(self.inspector)
 
     @property
