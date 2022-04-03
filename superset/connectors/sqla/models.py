@@ -662,6 +662,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         return self.database.sql_url + "?table_name=" + str(self.table_name)
 
     def external_metadata(self) -> List[Dict[str, str]]:
+        #here
         if self.sql:
             return get_virtual_table_metadata(dataset=self)
         return get_physical_table_metadata(
@@ -1500,12 +1501,16 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :param commit: should the changes be committed or not.
         :return: Tuple with lists of added, removed and modified column names.
         """
-        # this is the place I need modify for flatfile
+        # TODO: if flatdata ,return response from my function, not querying sql.
         print("*"*20, 'connectors/sqla/models.py->SqlaTable->fetch_metadata()')
         new_columns = self.external_metadata()
+        print("new_columns: ", new_columns)
         metrics = []
+        print("2")
         any_date_col = None
+        print("3")
         db_engine_spec = self.db_engine_spec
+        print("4")
         old_columns = db.session.query(TableColumn).filter(TableColumn.table == self)
         print('old_columns: ', old_columns)
         for col in old_columns:
@@ -1542,6 +1547,8 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
                 new_column.expression = ""
             new_column.groupby = True
             new_column.filterable = True
+            print('new_column: ', new_column)
+            print('new_column: ', new_column.__dict__)
             self.columns.append(new_column)
             if not any_date_col and new_column.is_temporal:
                 any_date_col = col["name"]
@@ -1550,6 +1557,9 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
             [col for col in old_columns_by_name.values() if col.expression]
         )
         print('self.columns: ', self.columns)
+        for i in self.columns:
+            print(i)
+            print(i.__dict__)
         metrics.append(
             SqlMetric(
                 metric_name="count",
@@ -1568,7 +1578,8 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
 
         db.session.merge(self)
         print('db.session: ', db.session.__dict__)
-        print('db.session.session_factory.query_cls: ', db.session.session_factory.query_cls.__dict__)
+        # print('db.session.session_factory.query_cls: ', db.session.session_factory.query_cls.__dict__)
+        # this session contain both table and table_columns?
         if commit:
             db.session.commit()
         return results

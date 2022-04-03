@@ -73,33 +73,39 @@ class CreateDatasetCommand(BaseCommand):
         return dataset
 
     def validate(self) -> None:
+        print('datasets/commands/create.py->CreateDatasetCommand->validate()')
         exceptions: List[ValidationError] = list()
         database_id = self._properties["database"]
         table_name = self._properties["table_name"]
         schema = self._properties.get("schema", None)
         owner_ids: Optional[List[int]] = self._properties.get("owners")
-
+        print("1")
         # Validate uniqueness
         if not DatasetDAO.validate_uniqueness(database_id, schema, table_name):
             exceptions.append(DatasetExistsValidationError(table_name))
-
+        print("2")
         # Validate/Populate database
         database = DatasetDAO.get_database_by_id(database_id)
         if not database:
             exceptions.append(DatabaseNotFoundValidationError())
         self._properties["database"] = database
-
+        sqlalchemy_uri = database.__dict__['sqlalchemy_uri']
+        engine_name = sqlalchemy_uri.split(':')[0]
+        # print(engine_name)
+        print("3")
+        if engine_name != 'flat':
         # Validate table exists on dataset
-        if database and not DatasetDAO.validate_table_exists(
-            database, table_name, schema
-        ):
-            exceptions.append(TableNotFoundValidationError(table_name))
-
+            if database and not DatasetDAO.validate_table_exists(
+                database, table_name, schema
+            ):
+                exceptions.append(TableNotFoundValidationError(table_name))
+        print("4")
         try:
             owners = populate_owners(self._actor, owner_ids)
             self._properties["owners"] = owners
         except ValidationError as ex:
             exceptions.append(ex)
+        print("5")
         if exceptions:
             exception = DatasetInvalidError()
             exception.add_list(exceptions)
