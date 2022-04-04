@@ -119,6 +119,9 @@ class Datasource(BaseSupersetView):
         datasource = ConnectorRegistry.get_datasource(
             datasource_type, datasource_id, db.session
         )
+        print('*'*20, 'views/datasource/views.py->Datasource->get()')
+        print('datasource: ', datasource)
+        print('datasource.data: ', datasource.data)
         return self.json_response(datasource.data)
 
     @expose("/external_metadata/<datasource_type>/<datasource_id>/")

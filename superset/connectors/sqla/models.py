@@ -1502,8 +1502,9 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :return: Tuple with lists of added, removed and modified column names.
         """
         # TODO: if flatdata ,return response from my function, not querying sql.
-        print("*"*20, 'connectors/sqla/models.py->SqlaTable->fetch_metadata()')
-        new_columns = self.external_metadata()
+        # print("*"*20, 'connectors/sqla/models.py->SqlaTable->fetch_metadata()')
+        # new_columns = self.external_metadata()
+        new_columns = [{'name': 'id', 'type': 'INTEGER', 'nullable': True, 'default': None, 'autoincrement': 'auto', 'primary_key': 0, 'type_generic': None}, {'name': 'name', 'type': 'TEXT', 'nullable': True, 'default': None, 'autoincrement': 'auto', 'primary_key': 0, 'type_generic': None}]
         print("new_columns: ", new_columns)
         metrics = []
         print("2")
@@ -1511,6 +1512,7 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         print("3")
         db_engine_spec = self.db_engine_spec
         print("4")
+        # nothing in old_columns
         old_columns = db.session.query(TableColumn).filter(TableColumn.table == self)
         print('old_columns: ', old_columns)
         for col in old_columns:
