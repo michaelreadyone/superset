@@ -14,6 +14,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
+from csv import Dialect
 import logging
 from typing import Any, Dict, List, Optional
 
@@ -45,6 +46,9 @@ class CreateDatabaseCommand(BaseCommand):
     def run(self) -> Model:
         self.validate()
 
+        # print("*"*20, 'databases/commands/create.py->CreateDatabaseCommand->run()')
+        dialect = self._properties['sqlalchemy_uri'].split(':')[0]
+
         try:
             # Test connection before starting create transaction
             TestConnectionDatabaseCommand(self._actor, self._properties).run()
@@ -60,12 +64,14 @@ class CreateDatabaseCommand(BaseCommand):
             database.set_sqlalchemy_uri(database.sqlalchemy_uri)
 
             # adding a new database we always want to force refresh schema list
-            schemas = database.get_all_schema_names(cache=False)
-            for schema in schemas:
-                security_manager.add_permission_view_menu(
-                    "schema_access", security_manager.get_schema_perm(database, schema)
-                )
-            security_manager.add_permission_view_menu("database_access", database.perm)
+            # Flat file don't execute below
+            if dialect != 'flat':
+                schemas = database.get_all_schema_names(cache=False)
+                for schema in schemas:
+                    security_manager.add_permission_view_menu(
+                        "schema_access", security_manager.get_schema_perm(database, schema)
+                    )
+                security_manager.add_permission_view_menu("database_access", database.perm)
             db.session.commit()
         except DAOCreateFailedError as ex:
             db.session.rollback()
