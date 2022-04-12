@@ -238,6 +238,8 @@ class BaseDatasource(
         verbose_map.update(
             {o.column_name: o.verbose_name or o.column_name for o in self.columns}
         )
+        # TODO this should depends on SQL or flat datasource
+        tmp_select_start = ""
         return {
             # simple fields
             "id": self.id,
@@ -267,7 +269,7 @@ class BaseDatasource(
             "order_by_choices": order_by_choices,
             "owners": [owner.id for owner in self.owners],
             "verbose_map": verbose_map,
-            "select_star": self.select_star,
+            "select_star": tmp_select_start,
         }
 
     def data_for_slices(self, slices: List[Slice]) -> Dict[str, Any]:

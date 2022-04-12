@@ -1500,7 +1500,13 @@ class SqlaTable(  # pylint: disable=too-many-public-methods,too-many-instance-at
         :param commit: should the changes be committed or not.
         :return: Tuple with lists of added, removed and modified column names.
         """
-        new_columns = self.external_metadata()
+        print('*'*20, 'connectors/sqla/models.py->SqlaTable->fetch_metadata()')
+        print('self.dict: ', self.__dict__)
+        if 'flattable' in self.__dict__['table_name']:
+            cols_info = self.__dict__['cols_info']
+            new_columns = [{'name': col_info['column_name'], 'type': col_info['type'], 'nullable': True, 'default': None, 'autoincrement': 'auto', 'primary_key': 0, 'type_generic': None} for col_info in cols_info]
+        else:
+            new_columns = self.external_metadata()
         metrics = []
         any_date_col = None
         db_engine_spec = self.db_engine_spec

@@ -1070,11 +1070,21 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
     ) -> FlaskResponse:
         """Endpoint to fetch the list of tables for given database"""
         # Guarantees database filtering by security access
+        # print('*'*20, 'views/core.py->superset->tables()')
         query = db.session.query(Database)
         query = DatabaseFilter("id", SQLAInterface(Database, db.session)).apply(
             query, None
         )
         database = query.filter_by(id=db_id).one_or_none()
+        sqlalchemy_uri = database.__dict__['sqlalchemy_uri']
+        engine_name = sqlalchemy_uri.split(':')[0]
+
+        # pop flat table name as 'flattable' + filename
+        if engine_name == 'flat':
+            file_name = 'flattable_' + sqlalchemy_uri.split('/')[-1].split('.')[0]
+            payload = {"tableLength": 1, "options": [{"value": file_name, "schema": "main", "label": file_name, "title": file_name, "type": "table", "extra": {}}]}
+            return json_success(json.dumps(payload))
+
         if not database:
             return json_error_response("Not found", 404)
 

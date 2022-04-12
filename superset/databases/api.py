@@ -446,8 +446,15 @@ class DatabaseRestApi(BaseSupersetModelRestApi):
               $ref: '#/components/responses/500'
         """
         database = self.datamodel.get(pk, self._base_filters)
+        # print('*' * 20, 'databases/api.py->DatabaseRestApi->schemas()')
         if not database:
             return self.response_404()
+        sqlalchemy_uri = database.__dict__['sqlalchemy_uri']
+        engine_name = sqlalchemy_uri.split(':')[0]
+        # print('engine_name: ', engine_name)
+        if engine_name == 'flat':
+          return self.response(200, result=["main"])
+          
         try:
             schemas = database.get_all_schema_names(
                 cache=database.schema_cache_enabled,

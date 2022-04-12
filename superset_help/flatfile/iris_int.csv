@@ -1,0 +1,4 @@
+sepal_lenth,sepal_width,petal_length,petal_width,class
+51,38,16,2,Iris-setosa
+70,32,47,14,Iris-versicolor
+65,30,52,20,Iris-virginica

@@ -25,6 +25,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from superset.commands.base import BaseCommand
 from superset.commands.utils import populate_owners
 from superset.dao.exceptions import DAOCreateFailedError
+from superset.databases.schemas import sqlalchemy_uri_validator
 from superset.datasets.commands.exceptions import (
     DatabaseNotFoundValidationError,
     DatasetCreateFailedError,
@@ -82,12 +83,15 @@ class CreateDatasetCommand(BaseCommand):
         if not database:
             exceptions.append(DatabaseNotFoundValidationError())
         self._properties["database"] = database
-
-        # Validate table exists on dataset
-        if database and not DatasetDAO.validate_table_exists(
-            database, table_name, schema
-        ):
-            exceptions.append(TableNotFoundValidationError(table_name))
+        sqlalchemy_uri = database.__dict__['sqlalchemy_uri']
+        engine_name = sqlalchemy_uri.split(':')[0]
+        # Do not fetch schema and table name for flatfile
+        if engine_name != 'flat':
+            # Validate table exists on dataset
+            if database and not DatasetDAO.validate_table_exists(
+                database, table_name, schema
+            ):
+                exceptions.append(TableNotFoundValidationError(table_name))
 
         try:
             owners = populate_owners(self._actor, owner_ids)

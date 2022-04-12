@@ -245,6 +245,16 @@ class DatasetRestApi(BaseSupersetModelRestApi):
         except ValidationError as error:
             return self.response_400(message=error.messages)
 
+        print('*'*20, 'datasets/api.py->DatasetRestApi->post()')
+        print('item: ', item)
+        item['cols_info'] = [
+          {'column_name':'sepal_length','type':'INTEGER'},
+          {'column_name':'sepal_width','type':'INTEGER'},
+          {'column_name':'petal_length','type':'INTEGER'},
+          {'column_name':'petal_width','type':'INTEGER'},
+          {'column_name':'class','type':'TEXT'},
+        ]
+
         try:
             new_model = CreateDatasetCommand(g.user, item).run()
             return self.response(201, id=new_model.id, result=item)
