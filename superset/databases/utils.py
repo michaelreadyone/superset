@@ -16,8 +16,10 @@
 # under the License.
 from typing import Any, Dict, List, Optional
 
-from superset import app
+from superset import app, db
+from superset.connectors.connector_registry import ConnectorRegistry
 from superset.models.core import Database
+from superset.connectors.sqla import models
 
 custom_password_store = app.config["SQLALCHEMY_CUSTOM_PASSWORD_STORE"]
 
@@ -62,40 +64,57 @@ def get_table_metadata(
     :param schema_name: schema name
     :return: Dict table metadata ready for API response
     """
+    print('*'*20, 'databases/utils.py->get_table_metadata()')
     keys = []
-    columns = database.get_columns(table_name, schema_name)
-    primary_key = database.get_pk_constraint(table_name, schema_name)
-    if primary_key and primary_key.get("constrained_columns"):
-        primary_key["column_names"] = primary_key.pop("constrained_columns")
-        primary_key["type"] = "pk"
-        keys += [primary_key]
-    foreign_keys = get_foreign_keys_metadata(database, table_name, schema_name)
-    indexes = get_indexes_metadata(database, table_name, schema_name)
-    keys += foreign_keys + indexes
-    payload_columns: List[Dict[str, Any]] = []
-    table_comment = database.get_table_comment(table_name, schema_name)
-    for col in columns:
-        dtype = get_col_type(col)
-        payload_columns.append(
-            {
-                "name": col["name"],
-                "type": dtype.split("(")[0] if "(" in dtype else dtype,
-                "longType": dtype,
-                "keys": [k for k in keys if col["name"] in k["column_names"]],
-                "comment": col.get("comment"),
-            }
+    if 'flattable' in table_name:
+        db_id = database.__dict__['id']
+        table_data = db.session.query(models.SqlaTable).filter_by(database_id=db_id).first()
+        table_id = table_data.__dict__['id']
+        datasource = ConnectorRegistry.get_datasource(
+            'table', table_id, db.session
         )
-    return {
-        "name": table_name,
-        "columns": payload_columns,
-        "selectStar": database.select_star(
+        payload_columns: List[Dict[str, Any]] = []
+        payload_columns = [{"comment": None, "keys": [], "longType": col["type"], "name": col["column_name"], "type": col["type"]} for col in datasource.data['columns']]
+        select_star = ""
+        primary_key = ""
+        foreign_keys = []
+        keys = []
+        table_comment = None
+    else:
+        columns = database.get_columns(table_name, schema_name)
+        primary_key = database.get_pk_constraint(table_name, schema_name)
+        if primary_key and primary_key.get("constrained_columns"):
+            primary_key["column_names"] = primary_key.pop("constrained_columns")
+            primary_key["type"] = "pk"
+            keys += [primary_key]
+        foreign_keys = get_foreign_keys_metadata(database, table_name, schema_name)
+        indexes = get_indexes_metadata(database, table_name, schema_name)
+        keys += foreign_keys + indexes
+        payload_columns: List[Dict[str, Any]] = []
+        table_comment = database.get_table_comment(table_name, schema_name)
+        for col in columns:
+            dtype = get_col_type(col)
+            payload_columns.append(
+                {
+                    "name": col["name"],
+                    "type": dtype.split("(")[0] if "(" in dtype else dtype,
+                    "longType": dtype,
+                    "keys": [k for k in keys if col["name"] in k["column_names"]],
+                    "comment": col.get("comment"),
+                }
+            )
+        select_star = database.select_star(
             table_name,
             schema=schema_name,
             show_cols=True,
             indent=True,
             cols=columns,
             latest_partition=True,
-        ),
+        )
+    return {
+        "name": table_name,
+        "columns": payload_columns,
+        "selectStar": select_star,
         "primaryKey": primary_key,
         "foreignKeys": foreign_keys,
         "indexes": keys,

@@ -143,6 +143,7 @@ from superset.views.utils import (
     is_owner,
 )
 from superset.viz import BaseViz
+from superset_help.flatfile.parse_flat_file import parse_flat_file
 
 config = app.config
 SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT = config["SQLLAB_QUERY_COST_ESTIMATE_TIMEOUT"]
@@ -2584,7 +2585,29 @@ class Superset(BaseSupersetView):  # pylint: disable=too-many-public-methods
         log_params = {
             "user_agent": cast(Optional[str], request.headers.get("USER_AGENT"))
         }
-        return self.sql_json_exec(request.json, log_params)
+        # conditio for flatfile
+        db_id = request.json['database_id']
+        target_db = db.session.query(Database).filter_by(id=db_id).first()
+        sqlalchemy_uri = target_db.__dict__['sqlalchemy_uri']
+        engine_name = sqlalchemy_uri.split(':')[0]
+        if engine_name == 'flat':
+            filepath = sqlalchemy_uri.split('///')[-1]
+            json_sql = '{"SELECT":["*"]}' if request.json['sql'] == "" else request.json['sql']
+            try:
+                json_sql = json.loads(json_sql)
+            except:
+                # pass
+                raise RuntimeError("not valid json string")
+            table_data = db.session.query(SqlaTable).filter_by(database_id=db_id).first()
+            table_id = table_data.__dict__['id']
+            table_meta = ConnectorRegistry.get_datasource(
+                'table', table_id, db.session
+            )
+            col_infos = table_meta.data['columns']
+            data = parse_flat_file(filepath, col_infos, json_sql)
+            return json_success(json.dumps(data))
+        else:
+            return self.sql_json_exec(request.json, log_params)
 
     def sql_json_exec(  # pylint: disable=too-many-statements,too-many-locals
         self, query_params: Dict[str, Any], log_params: Optional[Dict[str, Any]] = None
